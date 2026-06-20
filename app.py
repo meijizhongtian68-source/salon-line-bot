@@ -203,18 +203,21 @@ scheduler.add_job(
     replace_existing=True,
 )
 
+# ───────────────────────────────────────
+# 起動時初期化（gunicorn でも動くよう __main__ の外に置く）
+# ───────────────────────────────────────
+with app.app_context():
+    db.create_all()
+    logger.info("DB テーブル作成完了")
+
+if not scheduler.running:
+    scheduler.start()
+    logger.info("ステップ配信スケジューラー起動")
 
 # ───────────────────────────────────────
 # エントリーポイント
 # ───────────────────────────────────────
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        logger.info("DB テーブル作成完了")
-
-    scheduler.start()
-    logger.info("ステップ配信スケジューラー起動")
-
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
