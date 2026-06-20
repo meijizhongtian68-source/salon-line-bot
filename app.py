@@ -111,7 +111,7 @@ def on_follow(event):
             # Step 0: ウェルカムメッセージ送信
             try:
                 # まずシンプルなテキストでテスト
-                test_messages = [TextMessage(text=f"🌸 {display_name}さん、ご登録ありがとうございます！\n{SALON_NAME}の公式LINEへようこそ✨\n\n「予約」と送ると予約できます！")]
+                test_messages = [TextMessage(text=f"{display_name}さん、ご登録ありがとうございます！")]
                 api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
