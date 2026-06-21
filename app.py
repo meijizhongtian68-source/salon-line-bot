@@ -238,6 +238,21 @@ with app.app_context():
     db.create_all()
     logger.info("DB テーブル作成完了")
 
+    # ── 既存ユーザーへの新ステップ誤送信防止 ──
+    # step4〜6 が未セットの既存ユーザー（step1送信済み）にフラグを立てる
+    from models import User
+    existing = User.query.filter(
+        User.step1_sent == True,
+        User.step4_sent == False,
+    ).all()
+    if existing:
+        for u in existing:
+            u.step4_sent = True
+            u.step5_sent = True
+            u.step6_sent = True
+        db.session.commit()
+        logger.info(f"既存ユーザー {len(existing)}人 の Step4〜6 をスキップ設定")
+
 if not scheduler.running:
     scheduler.start()
     logger.info("ステップ配信スケジューラー起動")
