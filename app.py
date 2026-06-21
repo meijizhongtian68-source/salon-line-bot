@@ -111,7 +111,7 @@ def on_follow(event):
             # Step 0: ウェルカムメッセージ送信
             try:
                 # まずシンプルなテキストでテスト
-                welcome_text = (
+                intro_text = (
                     f"ご登録ありがとうございます😊\n"
                     f"男の専門整体「KILIG」です。\n\n"
                     f"男性特有のお悩みに特化した\n"
@@ -119,14 +119,16 @@ def on_follow(event):
                     f"LINEから簡単30秒で\n"
                     f"ご予約・ご相談いただけます✨\n\n"
                     f"※回答内容は完全に秘密厳守です\n"
-                    f"※答えにくい質問は飛ばしてOKです\n\n"
-                    f"①気になるお悩みは？\n"
+                    f"※答えにくい質問は飛ばしてOKです"
+                )
+                q1_text = (
+                    f"①気になるお悩みは？\n\n"
                     f"　A. 夜中に何度もトイレに起きる\n"
                     f"　B. 勢い・持続力の衰えが気になる\n"
                     f"　C. 両方とも気になる\n"
                     f"　D. その他・相談したい"
                 )
-                test_messages = [TextMessage(text=welcome_text)]
+                test_messages = [TextMessage(text=intro_text), TextMessage(text=q1_text)]
 
                 # アンケート開始状態をセット
                 from models import ConversationState
