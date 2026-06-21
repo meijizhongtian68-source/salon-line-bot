@@ -10,10 +10,9 @@ logger = logging.getLogger(__name__)
 # 状態定義
 # ───────────────────────────────────────
 STATE_IDLE            = "idle"
-STATE_SELECT_MENU     = "selecting_menu"
-STATE_SELECT_DATE     = "selecting_date"
-STATE_SELECT_TIME     = "selecting_time"
-STATE_CONFIRMING      = "confirming"
+STATE_ASKING_NAME_AGE = "asking_name_age"
+STATE_ASKING_SYMPTOMS = "asking_symptoms"
+STATE_ASKING_DATES    = "asking_dates"
 
 # ───────────────────────────────────────
 # テキストトリガーキーワード
@@ -55,128 +54,25 @@ def _reset_state(state: ConversationState) -> None:
     state.temp_time       = None
 
 
-def _invalid_step_msg() -> list:
-    return [TextMessage(text="最初からやり直します🙇\nご希望のメニューを選んでください。")]
-
-
 # ───────────────────────────────────────
 # Postback イベント処理
 # ───────────────────────────────────────
 
 def process_postback(user_id: str, data: str) -> list:
-    """
-    ボタン操作（Postback）を受け取り、次のメッセージリストを返す。
-    """
     params = _parse_data(data)
     action = params.get("action", "")
+    state  = _get_state(user_id)
 
-    state = _get_state(user_id)
-    user  = User.query.filter_by(line_user_id=user_id).first()
-    name  = (user.display_name or "お客様") if user else "お客様"
-
-    # ─── 予約開始 ───
-    if action == "start_reservation":
+    if action in ("start_reservation",):
         _reset_state(state)
-        state.state = STATE_SELECT_MENU
+        state.state = STATE_ASKING_NAME_AGE
         db.session.commit()
+        from messages import get_reservation_ask_name_age
+        return get_reservation_ask_name_age()
 
-        from messages import get_menu_select_message
-        return get_menu_select_message()
-
-    # ─── メニュー一覧表示 ───
-    elif action == "show_menu":
+    if action == "show_menu":
         from messages import get_menu_list_message
         return get_menu_list_message()
-
-    # ─── メニュー選択 ───
-    elif action == "select_menu":
-        if state.state != STATE_SELECT_MENU:
-            _reset_state(state)
-            db.session.commit()
-            return _invalid_step_msg()
-
-        state.temp_menu       = params.get("name", "")
-        state.temp_menu_price = params.get("price", "")
-        state.state           = STATE_SELECT_DATE
-        db.session.commit()
-
-        from messages import get_date_select_message
-        return get_date_select_message(state.temp_menu)
-
-    # ─── 日程選択 ───
-    elif action == "select_date":
-        if state.state != STATE_SELECT_DATE:
-            _reset_state(state)
-            db.session.commit()
-            return _invalid_step_msg()
-
-        state.temp_date = params.get("date", "")
-        state.state     = STATE_SELECT_TIME
-        db.session.commit()
-
-        from messages import get_time_select_message
-        return get_time_select_message(state.temp_date)
-
-    # ─── 時間選択 ───
-    elif action == "select_time":
-        if state.state != STATE_SELECT_TIME:
-            _reset_state(state)
-            db.session.commit()
-            return _invalid_step_msg()
-
-        state.temp_time = params.get("time", "")
-        state.state     = STATE_CONFIRMING
-        db.session.commit()
-
-        from messages import get_confirm_message
-        return get_confirm_message(
-            state.temp_menu,
-            state.temp_menu_price,
-            state.temp_date,
-            state.temp_time,
-        )
-
-    # ─── 予約確定 ───
-    elif action == "confirm_reservation":
-        if state.state != STATE_CONFIRMING:
-            _reset_state(state)
-            db.session.commit()
-            return _invalid_step_msg()
-
-        # DB に保存
-        if user:
-            reservation = Reservation(
-                user_id    = user.id,
-                menu_name  = state.temp_menu,
-                menu_price = state.temp_menu_price,
-                date       = state.temp_date,
-                time_slot  = state.temp_time,
-                status     = "confirmed",
-            )
-            db.session.add(reservation)
-            logger.info(
-                f"予約確定: {name} / {state.temp_menu} "
-                f"/ {state.temp_date} {state.temp_time}"
-            )
-
-        # 一時データを保持したまま状態リセット（完了メッセージ用に使う）
-        menu_name  = state.temp_menu or ""
-        date_str   = state.temp_date or ""
-        time_slot  = state.temp_time or ""
-        _reset_state(state)
-        db.session.commit()
-
-        from messages import get_complete_message
-        return get_complete_message(name, menu_name, date_str, time_slot)
-
-    # ─── やり直し ───
-    elif action in ("restart_reservation", "cancel_reservation"):
-        _reset_state(state)
-        state.state = STATE_SELECT_MENU
-        db.session.commit()
-
-        from messages import get_menu_select_message
-        return get_menu_select_message()
 
     return []
 
@@ -186,23 +82,50 @@ def process_postback(user_id: str, data: str) -> list:
 # ───────────────────────────────────────
 
 def process_text(user_id: str, text: str) -> list:
-    """
-    キーワードを検出して予約フロー or メニュー表示を開始する。
-    """
-    t = text.strip().lower()
+    t     = text.strip()
+    tl    = t.lower()
+    state = _get_state(user_id)
+    user  = User.query.filter_by(line_user_id=user_id).first()
+    name  = (user.display_name or "お客様") if user else "お客様"
 
-    if any(k in t for k in TRIGGER_RESERVATION):
-        state = _get_state(user_id)
-        _reset_state(state)
-        state.state = STATE_SELECT_MENU
+    # ── 予約キーワード（idle 時のみ開始）──
+    if state.state == STATE_IDLE and any(k in tl for k in TRIGGER_RESERVATION):
+        state.state = STATE_ASKING_NAME_AGE
         db.session.commit()
+        from messages import get_reservation_ask_name_age
+        return get_reservation_ask_name_age()
 
-        from messages import get_menu_select_message
-        return get_menu_select_message()
+    # ── ① 名前・年齢を受け取る ──
+    if state.state == STATE_ASKING_NAME_AGE:
+        state.temp_menu = t        # 名前・年齢を保存
+        state.state     = STATE_ASKING_SYMPTOMS
+        db.session.commit()
+        from messages import get_reservation_ask_symptoms
+        return get_reservation_ask_symptoms()
 
-    if any(k in t for k in TRIGGER_MENU):
+    # ── ② 症状・目標を受け取る ──
+    if state.state == STATE_ASKING_SYMPTOMS:
+        state.temp_menu_price = t  # 症状・目標を保存
+        state.state           = STATE_ASKING_DATES
+        db.session.commit()
+        from messages import get_reservation_ask_dates
+        return get_reservation_ask_dates()
+
+    # ── ③ 希望日時を受け取る ──
+    if state.state == STATE_ASKING_DATES:
+        state.temp_date = t        # 希望日時を保存
+        logger.info(
+            f"予約リクエスト: {name} / {state.temp_menu} "
+            f"/ {state.temp_menu_price} / {state.temp_date}"
+        )
+        _reset_state(state)
+        db.session.commit()
+        from messages import get_reservation_complete_message
+        return get_reservation_complete_message(name)
+
+    # ── メニュー確認キーワード ──
+    if any(k in tl for k in TRIGGER_MENU):
         from messages import get_menu_list_message
         return get_menu_list_message()
 
-    # その他のメッセージには返答しない（サロンの裁量に委ねる）
     return []

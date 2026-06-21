@@ -11,27 +11,22 @@ from linebot.v3.messaging import (
 # ============================================================
 # ★ サロン情報 ── ここをご自身のサロン情報に書き換えてください ★
 # ============================================================
-SALON_NAME    = "Beauty Salon BLOOM"
-SALON_ADDRESS = "東京都渋谷区○○1-2-3"
-SALON_PHONE   = "03-XXXX-XXXX"
-SALON_HOURS   = "10:00〜20:00（火曜定休）"
-SALON_MAP_URL = "https://maps.google.com/maps?q=東京都渋谷区"
+SALON_NAME    = "男の専門整体『KILIG』"
+SALON_ADDRESS = "南富山駅より車で3分"   # 予約確定後のみ送信
+SALON_PHONE   = ""
+SALON_HOURS   = "火・水 9:00〜18:00 / 金・土・日 13:00〜21:00"
+SALON_MAP_URL = "https://maps.google.com/maps?q=南富山駅"
 
 # メニュー定義
 MENUS = [
-    {"name": "カット",         "price": "¥5,500",  "duration": "60分"},
-    {"name": "カラー",         "price": "¥8,800",  "duration": "90分"},
-    {"name": "カット＋カラー", "price": "¥13,200", "duration": "120分"},
-    {"name": "パーマ",         "price": "¥11,000", "duration": "120分"},
-    {"name": "トリートメント", "price": "¥3,300",  "duration": "30分"},
+    {"name": "血流改善×深部筋膜リリース", "price": "初回¥9,900（通常¥33,000）", "duration": "2時間（カウンセリング含む）"},
 ]
 
 # 予約時間スロット
-TIME_SLOTS = ["10:00", "11:00", "12:00", "13:00", "14:00",
-              "15:00", "16:00", "17:00", "18:00"]
+TIME_SLOTS = ["9:00", "11:00", "13:00", "15:00", "17:00", "19:00"]
 
 # 定休日（0=月, 1=火, ..., 6=日）
-CLOSED_WEEKDAYS = [1]  # 火曜定休
+CLOSED_WEEKDAYS = [0, 3]  # 月・木定休
 
 WEEKDAY_JP = ["月", "火", "水", "木", "金", "土", "日"]
 # ============================================================
@@ -386,6 +381,47 @@ def get_step3_message(name: str) -> list:
             },
         ),
     ]
+
+
+# ─────────────────────────────────────────
+# Q&A 予約フロー
+# ─────────────────────────────────────────
+def get_reservation_ask_name_age() -> list:
+    return [TextMessage(text=(
+        "ご予約ありがとうございます😊\n\n"
+        "【血流改善×深部筋膜リリース】\n"
+        "初回¥9,900（通常¥33,000）/ 2時間\n\n"
+        "①お名前と年齢を教えてください🙏"
+    ))]
+
+
+def get_reservation_ask_symptoms() -> list:
+    return [TextMessage(text=(
+        "ありがとうございます！\n\n"
+        "②改善したい症状・目標を教えてください💪\n\n"
+        "例：ED改善、血流改善、疲労回復など"
+    ))]
+
+
+def get_reservation_ask_dates() -> list:
+    return [TextMessage(text=(
+        "承知しました！\n\n"
+        "③ご来店希望日時を第3希望までお知らせください📅\n\n"
+        "営業日：火・水 9:00〜18:00\n"
+        "　　　　金・土・日 13:00〜21:00\n\n"
+        "例）\n"
+        "第1希望：○月○日（曜日）○時\n"
+        "第2希望：○月○日（曜日）○時\n"
+        "第3希望：○月○日（曜日）○時"
+    ))]
+
+
+def get_reservation_complete_message(name: str) -> list:
+    return [TextMessage(text=(
+        f"{name}さん、ご予約リクエストありがとうございます！\n\n"
+        "内容を確認の上、担当者より折り返しご連絡いたします😊\n\n"
+        "お気軽にお待ちください✨"
+    ))]
 
 
 # ─────────────────────────────────────────
