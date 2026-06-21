@@ -111,7 +111,33 @@ def on_follow(event):
             # Step 0: ウェルカムメッセージ送信
             try:
                 # まずシンプルなテキストでテスト
-                test_messages = [TextMessage(text=f"{display_name}さん、ご登録ありがとうございます！")]
+                welcome_text = (
+                    f"ご登録ありがとうございます😊\n"
+                    f"男の専門整体「KILIG」です。\n\n"
+                    f"男性特有のお悩みに特化した\n"
+                    f"専門ケアを行っております。\n\n"
+                    f"LINEから簡単30秒で\n"
+                    f"ご予約・ご相談いただけます✨\n\n"
+                    f"※回答内容は完全に秘密厳守です\n"
+                    f"※答えにくい質問は飛ばしてOKです\n\n"
+                    f"①気になるお悩みは？\n"
+                    f"　A. 夜中に何度もトイレに起きる\n"
+                    f"　B. 勢い・持続力の衰えが気になる\n"
+                    f"　C. 両方とも気になる\n"
+                    f"　D. その他・相談したい"
+                )
+                test_messages = [TextMessage(text=welcome_text)]
+
+                # アンケート開始状態をセット
+                from models import ConversationState
+                conv = ConversationState.query.filter_by(line_user_id=user_id).first()
+                if not conv:
+                    conv = ConversationState(line_user_id=user_id, state="survey_q1")
+                    db.session.add(conv)
+                else:
+                    conv.state = "survey_q1"
+                    conv.temp_menu = conv.temp_menu_price = conv.temp_date = conv.temp_time = None
+                db.session.commit()
                 api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,

@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 # 状態定義
 # ───────────────────────────────────────
 STATE_IDLE            = "idle"
+STATE_SURVEY_Q1       = "survey_q1"
+STATE_SURVEY_Q2       = "survey_q2"
+STATE_SURVEY_Q3       = "survey_q3"
+STATE_SURVEY_Q4       = "survey_q4"
 STATE_ASKING_NAME_AGE = "asking_name_age"
 STATE_ASKING_SYMPTOMS = "asking_symptoms"
 STATE_ASKING_DATES    = "asking_dates"
@@ -88,12 +92,63 @@ def process_text(user_id: str, text: str) -> list:
     user  = User.query.filter_by(line_user_id=user_id).first()
     name  = (user.display_name or "お客様") if user else "お客様"
 
-    # ── 予約キーワード（idle 時のみ開始）──
-    if state.state == STATE_IDLE and any(k in tl for k in TRIGGER_RESERVATION):
+    # ── 予約キーワード（いつでも予約開始可能）──
+    if any(k in tl for k in TRIGGER_RESERVATION) and state.state not in [STATE_ASKING_NAME_AGE, STATE_ASKING_SYMPTOMS, STATE_ASKING_DATES]:
         state.state = STATE_ASKING_NAME_AGE
         db.session.commit()
         from messages import get_reservation_ask_name_age
         return get_reservation_ask_name_age()
+
+    # ── アンケート Q1 ──
+    if state.state == STATE_SURVEY_Q1:
+        state.temp_menu = t
+        state.state = STATE_SURVEY_Q2
+        db.session.commit()
+        return [TextMessage(text=(
+            "②お悩みの期間は？\n\n"
+            "　A. 最近（1〜3ヶ月）\n"
+            "　B. 半年〜1年くらい\n"
+            "　C. 1年以上前から\n"
+            "　D. わからない"
+        ))]
+
+    # ── アンケート Q2 ──
+    if state.state == STATE_SURVEY_Q2:
+        state.temp_menu_price = t
+        state.state = STATE_SURVEY_Q3
+        db.session.commit()
+        return [TextMessage(text=(
+            "③これまで対策したことは？\n\n"
+            "　A. 特に何もしていない\n"
+            "　B. 病院で相談したことがある\n"
+            "　C. サプリ・市販薬を試した\n"
+            "　D. その他"
+        ))]
+
+    # ── アンケート Q3 ──
+    if state.state == STATE_SURVEY_Q3:
+        state.temp_date = t
+        state.state = STATE_SURVEY_Q4
+        db.session.commit()
+        return [TextMessage(text=(
+            "④ご来店のご希望は？\n\n"
+            "　A. できるだけ早く\n"
+            "　B. 来週中\n"
+            "　C. 2週間以降\n"
+            "　D. まずは相談だけしたい"
+        ))]
+
+    # ── アンケート Q4 ──
+    if state.state == STATE_SURVEY_Q4:
+        state.temp_time = t
+        _reset_state(state)
+        db.session.commit()
+        return [TextMessage(text=(
+            "ご回答いただいた内容をもとに\n"
+            "スタッフが個別にご案内します🙌\n\n"
+            "ご予約はいつでも【予約】と\n"
+            "送ってください✨"
+        ))]
 
     # ── ① 名前・年齢を受け取る ──
     if state.state == STATE_ASKING_NAME_AGE:
@@ -127,5 +182,6 @@ def process_text(user_id: str, text: str) -> list:
     if any(k in tl for k in TRIGGER_MENU):
         from messages import get_menu_list_message
         return get_menu_list_message()
+
 
     return []
