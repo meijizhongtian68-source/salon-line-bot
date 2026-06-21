@@ -22,6 +22,7 @@ class User(db.Model):
     step3_sent = db.Column(db.Boolean, default=False)  # 7日後
     step4_sent = db.Column(db.Boolean, default=False)  # 8日後
     step5_sent = db.Column(db.Boolean, default=False)  # 9日後
+    step6_sent = db.Column(db.Boolean, default=False)  # 10日後
 
     reservations = db.relationship('Reservation', backref='user', lazy=True)
 
