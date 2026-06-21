@@ -14,20 +14,32 @@ STEPS = [
     {
         "flag":    "step1_sent",
         "delay":   timedelta(days=1),   # 翌日
-        "label":   "Step1（メニュー案内）",
+        "label":   "Step1（ご登録ありがとう）",
         "getter":  "get_step1_message",
     },
     {
         "flag":    "step2_sent",
         "delay":   timedelta(days=3),   # 3日後
-        "label":   "Step2（お客様の声）",
+        "label":   "Step2（あの頃の自信）",
         "getter":  "get_step2_message",
     },
     {
         "flag":    "step3_sent",
         "delay":   timedelta(days=7),   # 7日後
-        "label":   "Step3（初回クーポン）",
+        "label":   "Step3（なぜマッサージではダメか）",
         "getter":  "get_step3_message",
+    },
+    {
+        "flag":    "step4_sent",
+        "delay":   timedelta(days=8),   # 8日後
+        "label":   "Step4（富山の男性を元気にしたい）",
+        "getter":  "get_step4_message",
+    },
+    {
+        "flag":    "step5_sent",
+        "delay":   timedelta(days=9),   # 9日後
+        "label":   "Step5（ついに募集開始）",
+        "getter":  "get_step5_message",
     },
 ]
 
@@ -60,11 +72,15 @@ def check_and_send_steps(messaging_api: MessagingApi) -> None:
                     get_step1_message,
                     get_step2_message,
                     get_step3_message,
+                    get_step4_message,
+                    get_step5_message,
                 )
                 fn_map = {
                     "get_step1_message": get_step1_message,
                     "get_step2_message": get_step2_message,
                     "get_step3_message": get_step3_message,
+                    "get_step4_message": get_step4_message,
+                    "get_step5_message": get_step5_message,
                 }
                 messages = fn_map[getter](user.display_name or "お客様")
 
