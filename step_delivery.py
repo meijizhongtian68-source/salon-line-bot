@@ -13,37 +13,37 @@ logger = logging.getLogger(__name__)
 STEPS = [
     {
         "flag":    "step1_sent",
-        "delay":   timedelta(days=1),   # 翌日
+        "delay":   timedelta(days=1),   # 1日後
         "label":   "Step1（ご登録ありがとう）",
         "getter":  "get_step1_message",
     },
     {
         "flag":    "step2_sent",
-        "delay":   timedelta(days=3),   # 3日後
+        "delay":   timedelta(days=2),   # 2日後
         "label":   "Step2（あの頃の自信）",
         "getter":  "get_step2_message",
     },
     {
         "flag":    "step3_sent",
-        "delay":   timedelta(days=7),   # 7日後
+        "delay":   timedelta(days=3),   # 3日後
         "label":   "Step3（なぜマッサージではダメか）",
         "getter":  "get_step3_message",
     },
     {
         "flag":    "step4_sent",
-        "delay":   timedelta(days=8),   # 8日後
+        "delay":   timedelta(days=4),   # 4日後
         "label":   "Step4（富山の男性を元気にしたい）",
         "getter":  "get_step4_message",
     },
     {
         "flag":    "step5_sent",
-        "delay":   timedelta(days=9),   # 9日後
+        "delay":   timedelta(days=5),   # 5日後
         "label":   "Step5（ついに募集開始）",
         "getter":  "get_step5_message",
     },
     {
         "flag":    "step6_sent",
-        "delay":   timedelta(days=10),  # 10日後
+        "delay":   timedelta(days=6),   # 6日後
         "label":   "Step6（本日受付開始・残りわずか）",
         "getter":  "get_step6_message",
     },
