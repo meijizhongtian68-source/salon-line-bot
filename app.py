@@ -2,9 +2,12 @@
 
 import os
 import logging
+import threading
+import time
 from datetime import datetime
 
-from flask import Flask, request, abort
+import requests as http_req
+from flask import Flask, request, abort, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
@@ -212,6 +215,107 @@ def on_message(event):
 
 
 # ───────────────────────────────────────
+# 管理用：既存フォロワーへのアンケート一斉送信
+# ───────────────────────────────────────
+
+def _do_broadcast_survey():
+    """バックグラウンドで全フォロワーにアンケートを送信"""
+    with app.app_context():
+        access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        # LINE API で全フォロワーID取得
+        all_user_ids = []
+        params = {"limit": 1000}
+        while True:
+            resp = http_req.get(
+                "https://api.line.me/v2/bot/followers/ids",
+                headers=headers, params=params
+            )
+            data = resp.json()
+            all_user_ids.extend(data.get("userIds", []))
+            if "next" not in data:
+                break
+            params["start"] = data["next"]
+
+        logger.info(f"アンケート一斉送信開始: {len(all_user_ids)}人")
+
+        message_text = (
+            "こんにちは！\n"
+            "男の専門整体「KILIG」オーナーのみきです😊\n\n"
+            "男性特有のお悩みに特化した専門ケアを行っております。\n\n"
+            "※回答内容は完全に秘密厳守です\n"
+            "※答えにくい質問は飛ばしてOKです\n\n"
+            "①気になるお悩みは？\n\n"
+            "　A. 夜中に何度もトイレに起きる\n"
+            "　B. 勢い・持続力の衰えが気になる\n"
+            "　C. 両方とも気になる\n"
+            "　D. その他・相談したい"
+        )
+
+        sent = 0
+        errors = 0
+
+        with _api() as client:
+            api = MessagingApi(client)
+
+            for user_id in all_user_ids:
+                # DBに登録（未登録の場合）
+                user = User.query.filter_by(line_user_id=user_id).first()
+                if not user:
+                    user = User(
+                        line_user_id=user_id,
+                        display_name="お客様",
+                        followed_at=datetime.utcnow(),
+                        step4_sent=True,
+                        step5_sent=True,
+                        step6_sent=True,
+                    )
+                    db.session.add(user)
+
+                # アンケート状態をセット
+                conv = ConversationState.query.filter_by(line_user_id=user_id).first()
+                if not conv:
+                    conv = ConversationState(line_user_id=user_id, state="survey_q1")
+                    db.session.add(conv)
+                else:
+                    conv.state = "survey_q1"
+
+                # メッセージ送信
+                try:
+                    api.push_message(PushMessageRequest(
+                        to=user_id,
+                        messages=[TextMessage(text=message_text)]
+                    ))
+                    sent += 1
+                    time.sleep(0.05)  # レート制限対策
+                except Exception as e:
+                    logger.error(f"送信エラー {user_id}: {e}")
+                    errors += 1
+
+                # 50人ごとにDBコミット
+                if (sent + errors) % 50 == 0:
+                    db.session.commit()
+
+        db.session.commit()
+        logger.info(f"アンケート一斉送信完了: {sent}人成功, {errors}件エラー")
+
+
+@app.route("/admin/broadcast-survey")
+def admin_broadcast_survey():
+    """既存フォロワー全員にアンケートを一斉送信（管理者専用）"""
+    token = request.args.get("token", "")
+    admin_token = os.getenv("ADMIN_TOKEN", "")
+    if not admin_token or token != admin_token:
+        abort(403)
+
+    thread = threading.Thread(target=_do_broadcast_survey, daemon=True)
+    thread.start()
+
+    return jsonify({"status": "started", "message": "送信開始しました！Renderのログで進捗を確認してください。"})
+
+
+# ───────────────────────────────────────
 # バックグラウンドスケジューラー（ステップ配信）
 # ───────────────────────────────────────
 
@@ -254,8 +358,9 @@ with app.app_context():
         logger.info(f"既存ユーザー {len(existing)}人 の Step4〜6 をスキップ設定")
 
 if not scheduler.running:
-    scheduler.start()
-    logger.info("ステップ配信スケジューラー起動")
+    pass  # ステップ配信一時停止中
+    # scheduler.start()
+    # logger.info("ステップ配信スケジューラー起動")
 
 # ───────────────────────────────────────
 # エントリーポイント
