@@ -99,9 +99,9 @@ def process_text(user_id: str, text: str) -> list:
         from messages import get_reservation_ask_name_age
         return get_reservation_ask_name_age()
 
-    # ── idle/survey_q1状態でA〜Dから始まる返信 → Q1回答として受け取る ──
-    first_char = t.strip()[0].upper() if t.strip() else ""
-    if state.state in [STATE_IDLE, STATE_SURVEY_Q1] and first_char in ["A", "B", "C", "D"]:
+    # ── idle/survey_q1状態でA〜Dを含む返信 → Q1回答として受け取る ──
+    has_abcd = any(c in t.upper() for c in ["A", "B", "C", "D"])
+    if state.state in [STATE_IDLE, STATE_SURVEY_Q1] and has_abcd:
         state.temp_menu = t
         state.state = STATE_SURVEY_Q2
         db.session.commit()
