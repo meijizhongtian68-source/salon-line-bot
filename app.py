@@ -60,6 +60,11 @@ def _api() -> ApiClient:
 # Webhook エンドポイント
 # ───────────────────────────────────────
 
+@app.route("/health")
+def health():
+    return "OK", 200
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     signature = request.headers.get("X-Line-Signature", "")
