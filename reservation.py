@@ -99,20 +99,6 @@ def process_text(user_id: str, text: str) -> list:
         from messages import get_reservation_ask_name_age
         return get_reservation_ask_name_age()
 
-    # ── idle/survey_q1状態でA〜Dを含む返信 → Q1回答として受け取る ──
-    has_abcd = any(c in t.upper() for c in ["A", "B", "C", "D"])
-    if state.state in [STATE_IDLE, STATE_SURVEY_Q1] and has_abcd:
-        state.temp_menu = t
-        state.state = STATE_SURVEY_Q2
-        db.session.commit()
-        return [TextMessage(text=(
-            "②お悩みの期間は？\n\n"
-            "　A. 最近（1〜3ヶ月）\n"
-            "　B. 半年〜1年くらい\n"
-            "　C. 1年以上前から\n"
-            "　D. わからない"
-        ))]
-
     # ── アンケート Q1 ──
     if state.state == STATE_SURVEY_Q1:
         state.temp_menu = t
