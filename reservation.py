@@ -99,23 +99,11 @@ def process_text(user_id: str, text: str) -> list:
         from messages import get_reservation_ask_name_age
         return get_reservation_ask_name_age()
 
-    # ── idle状態でA〜Dを含む返信 → Q1回答として受け取る ──
-    if state.state == STATE_IDLE:
-        has_abcd = any(c in t.upper() for c in ["A", "B", "C", "D"])
-        if has_abcd:
-            state.temp_menu = t
-            state.state = STATE_SURVEY_Q2
-            db.session.commit()
-            return [TextMessage(text=(
-                "②お悩みの期間は？\n\n"
-                "　A. 最近（1〜3ヶ月）\n"
-                "　B. 半年〜1年くらい\n"
-                "　C. 1年以上前から\n"
-                "　D. わからない"
-            ))]
+    # ── A〜Dを含むかチェック（アンケート共通）──
+    has_abcd = any(c in t.upper() for c in ["A", "B", "C", "D"])
 
-    # ── アンケート Q1 ──
-    if state.state == STATE_SURVEY_Q1:
+    # ── idle / Q1：A〜Dがあればアンケートを開始 ──
+    if state.state in [STATE_IDLE, STATE_SURVEY_Q1] and has_abcd:
         state.temp_menu = t
         state.state = STATE_SURVEY_Q2
         db.session.commit()
@@ -127,8 +115,8 @@ def process_text(user_id: str, text: str) -> list:
             "　D. わからない"
         ))]
 
-    # ── アンケート Q2 ──
-    if state.state == STATE_SURVEY_Q2:
+    # ── アンケート Q2：A〜Dがあれば次へ ──
+    if state.state == STATE_SURVEY_Q2 and has_abcd:
         state.temp_menu_price = t
         state.state = STATE_SURVEY_Q3
         db.session.commit()
@@ -140,8 +128,8 @@ def process_text(user_id: str, text: str) -> list:
             "　D. その他"
         ))]
 
-    # ── アンケート Q3 ──
-    if state.state == STATE_SURVEY_Q3:
+    # ── アンケート Q3：A〜Dがあれば次へ ──
+    if state.state == STATE_SURVEY_Q3 and has_abcd:
         state.temp_date = t
         state.state = STATE_SURVEY_Q4
         db.session.commit()
@@ -153,8 +141,8 @@ def process_text(user_id: str, text: str) -> list:
             "　D. まずは相談だけしたい"
         ))]
 
-    # ── アンケート Q4 ──
-    if state.state == STATE_SURVEY_Q4:
+    # ── アンケート Q4：A〜Dがあれば完了 ──
+    if state.state == STATE_SURVEY_Q4 and has_abcd:
         state.temp_time = t
         _reset_state(state)
         db.session.commit()
