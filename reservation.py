@@ -99,8 +99,9 @@ def process_text(user_id: str, text: str) -> list:
         from messages import get_reservation_ask_name_age
         return get_reservation_ask_name_age()
 
-    # ── idle状態でA〜Dの返信 → 一斉配信アンケートのQ1回答として受け取る ──
-    if state.state == STATE_IDLE and t.upper() in ["A", "B", "C", "D"]:
+    # ── idle/survey_q1状態でA〜Dから始まる返信 → Q1回答として受け取る ──
+    first_char = t.strip()[0].upper() if t.strip() else ""
+    if state.state in [STATE_IDLE, STATE_SURVEY_Q1] and first_char in ["A", "B", "C", "D"]:
         state.temp_menu = t
         state.state = STATE_SURVEY_Q2
         db.session.commit()
