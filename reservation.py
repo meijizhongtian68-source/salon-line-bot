@@ -2,7 +2,7 @@
 
 import logging
 from linebot.v3.messaging import TextMessage
-from models import db, User, Reservation, ConversationState
+from models import db, User, Reservation, ConversationState, SurveyResponse
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +106,13 @@ def process_text(user_id: str, text: str) -> list:
     if state.state in [STATE_IDLE, STATE_SURVEY_Q1] and has_abcd:
         state.temp_menu = t
         state.state = STATE_SURVEY_Q2
+        # Q1回答を保存
+        resp = SurveyResponse.query.filter_by(line_user_id=user_id).first()
+        if not resp:
+            resp = SurveyResponse(line_user_id=user_id, display_name=name, q1_answer=t)
+            db.session.add(resp)
+        else:
+            resp.q1_answer = t
         db.session.commit()
         return [TextMessage(text=(
             "②お悩みの期間は？\n\n"
@@ -119,6 +126,10 @@ def process_text(user_id: str, text: str) -> list:
     if state.state == STATE_SURVEY_Q2 and has_abcd:
         state.temp_menu_price = t
         state.state = STATE_SURVEY_Q3
+        # Q2回答を保存
+        resp = SurveyResponse.query.filter_by(line_user_id=user_id).first()
+        if resp:
+            resp.q2_answer = t
         db.session.commit()
         return [TextMessage(text=(
             "③これまで対策したことは？\n\n"
@@ -132,6 +143,10 @@ def process_text(user_id: str, text: str) -> list:
     if state.state == STATE_SURVEY_Q3 and has_abcd:
         state.temp_date = t
         state.state = STATE_SURVEY_Q4
+        # Q3回答を保存
+        resp = SurveyResponse.query.filter_by(line_user_id=user_id).first()
+        if resp:
+            resp.q3_answer = t
         db.session.commit()
         return [TextMessage(text=(
             "④ご来店のご希望は？\n\n"
@@ -144,6 +159,10 @@ def process_text(user_id: str, text: str) -> list:
     # ── アンケート Q4：A〜Dがあれば完了 ──
     if state.state == STATE_SURVEY_Q4 and has_abcd:
         state.temp_time = t
+        # Q4回答を保存
+        resp = SurveyResponse.query.filter_by(line_user_id=user_id).first()
+        if resp:
+            resp.q4_answer = t
         _reset_state(state)
         db.session.commit()
         return [TextMessage(text=(

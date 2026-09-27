@@ -65,6 +65,56 @@ def health():
     return "OK", 200
 
 
+@app.route("/admin/survey")
+def admin_survey():
+    """アンケート集計（管理者専用）"""
+    token = request.args.get("token", "")
+    if token != os.getenv("ADMIN_TOKEN", ""):
+        abort(403)
+
+    from models import SurveyResponse
+    responses = SurveyResponse.query.order_by(SurveyResponse.created_at.desc()).all()
+
+    q1 = {"A": 0, "B": 0, "C": 0, "D": 0}
+    q2 = {"A": 0, "B": 0, "C": 0, "D": 0}
+    q3 = {"A": 0, "B": 0, "C": 0, "D": 0}
+    q4 = {"A": 0, "B": 0, "C": 0, "D": 0}
+
+    for r in responses:
+        for ans, count in [(r.q1_answer, q1), (r.q2_answer, q2),
+                           (r.q3_answer, q3), (r.q4_answer, q4)]:
+            if ans:
+                for c in ["A", "B", "C", "D"]:
+                    if c in ans.upper():
+                        count[c] += 1
+                        break
+
+    html = f"""
+    <h2>アンケート集計（合計：{len(responses)}人）</h2>
+    <h3>①気になるお悩みは？</h3>
+    <p>A. 夜中に何度もトイレ: {q1['A']}人<br>
+       B. 勢い・持続力の衰え: {q1['B']}人<br>
+       C. 両方とも気になる: {q1['C']}人<br>
+       D. その他・相談したい: {q1['D']}人</p>
+    <h3>②お悩みの期間は？</h3>
+    <p>A. 最近（1〜3ヶ月）: {q2['A']}人<br>
+       B. 半年〜1年くらい: {q2['B']}人<br>
+       C. 1年以上前から: {q2['C']}人<br>
+       D. わからない: {q2['D']}人</p>
+    <h3>③これまで対策したことは？</h3>
+    <p>A. 特に何もしていない: {q3['A']}人<br>
+       B. 病院で相談したことがある: {q3['B']}人<br>
+       C. サプリ・市販薬を試した: {q3['C']}人<br>
+       D. その他: {q3['D']}人</p>
+    <h3>④ご来店のご希望は？</h3>
+    <p>A. できるだけ早く: {q4['A']}人<br>
+       B. 来週中: {q4['B']}人<br>
+       C. 2週間以降: {q4['C']}人<br>
+       D. まずは相談だけしたい: {q4['D']}人</p>
+    """
+    return html
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     signature = request.headers.get("X-Line-Signature", "")

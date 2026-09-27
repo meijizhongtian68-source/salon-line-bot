@@ -47,6 +47,23 @@ class Reservation(db.Model):
         return f'<Reservation {self.menu_name} {self.date} {self.time_slot}>'
 
 
+class SurveyResponse(db.Model):
+    """アンケート回答記録"""
+    __tablename__ = 'survey_responses'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    line_user_id = db.Column(db.String(100), nullable=False, index=True)
+    display_name = db.Column(db.String(200), default='')
+    q1_answer    = db.Column(db.String(200))  # ①気になるお悩み
+    q2_answer    = db.Column(db.String(200))  # ②お悩みの期間
+    q3_answer    = db.Column(db.String(200))  # ③これまでの対策
+    q4_answer    = db.Column(db.String(200))  # ④ご来店希望
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<SurveyResponse {self.display_name}>'
+
+
 class ConversationState(db.Model):
     """予約フローの会話ステート管理"""
     __tablename__ = 'conversation_states'
