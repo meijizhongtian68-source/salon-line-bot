@@ -142,7 +142,8 @@ def get_welcome_message(name: str) -> list:
 # ─────────────────────────────────────────
 def get_step1_message(name: str) -> list:
     return [TextMessage(text=(
-        "【ご登録ありがとうございます！】\n\n"
+        f"【ご登録ありがとうございます！】\n\n"
+        f"{name}さん、こんにちは！\n"
         "オーナーのみきです。\n\n"
         "この度はLINE登録ありがとうございます。\n\n"
         "「最近、朝の元気がなくなってきた…」\n"
@@ -169,8 +170,8 @@ def get_step1_message(name: str) -> list:
 # ─────────────────────────────────────────
 def get_step2_message(name: str) -> list:
     return [TextMessage(text=(
-        "【「あの頃」の自信、取り戻しませんか？】\n\n"
-        "おはようございます！\n"
+        f"【「あの頃」の自信、取り戻しませんか？】\n\n"
+        f"{name}さん、おはようございます！\n"
         "オーナーのみきです。\n\n"
         "もし、朝起きた瞬間に\n"
         "「今日も一日、力がみなぎっている！」\n"
@@ -196,8 +197,8 @@ def get_step2_message(name: str) -> list:
 # ─────────────────────────────────────────
 def get_step3_message(name: str) -> list:
     return [TextMessage(text=(
-        "【なぜ、マッサージや薬ではダメなのか？】\n\n"
-        "こんばんは！\n"
+        f"【なぜ、マッサージや薬ではダメなのか？】\n\n"
+        f"{name}さん、こんばんは！\n"
         "オーナーの美紀です。\n\n"
         "「疲れが取れないからマッサージに行く」\n"
         "「元気がほしいから薬を飲む」\n\n"
@@ -224,8 +225,8 @@ def get_step3_message(name: str) -> list:
 # ─────────────────────────────────────────
 def get_step4_message(name: str) -> list:
     return [TextMessage(text=(
-        "【富山の男性を、もっと元気にしたい】\n\n"
-        "こんにちは！\n"
+        f"【富山の男性を、もっと元気にしたい】\n\n"
+        f"{name}さん、こんにちは！\n"
         "オーナーの美紀です。\n\n"
         "実はこのサロン、最初は女性専用でスタートしました。\n"
         "でも、活動を続ける中で気づいたんです。\n\n"
@@ -249,8 +250,8 @@ def get_step4_message(name: str) -> list:
 # ─────────────────────────────────────────
 def get_step5_message(name: str) -> list:
     return [TextMessage(text=(
-        "【ついに明日、募集を開始します！】\n\n"
-        "こんばんは！\n"
+        f"【ついに明日、募集を開始します！】\n\n"
+        f"{name}さん、こんばんは！\n"
         "オーナーの美紀です。\n\n"
         "これまで、血流の大切さと\n"
         "私の想いをお伝えしてきました。\n\n"
@@ -281,8 +282,8 @@ def get_step5_message(name: str) -> list:
 # ─────────────────────────────────────────
 def get_step6_message(name: str) -> list:
     return [TextMessage(text=(
-        "【本日受付開始！残りわずかです】\n\n"
-        "おはようございます！\n"
+        f"【本日受付開始！残りわずかです】\n\n"
+        f"{name}さん、おはようございます！\n"
         "オーナーのみきです。\n\n"
         "お待たせいたしました。\n"
         "北陸唯一の血流改善メニュー、\n"
