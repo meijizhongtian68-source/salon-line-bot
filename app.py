@@ -413,8 +413,9 @@ with app.app_context():
         logger.info(f"既存ユーザー {len(existing)}人 の Step4〜6 をスキップ設定")
 
 if not scheduler.running:
-    scheduler.start()
-    logger.info("ステップ配信スケジューラー起動")
+    pass  # ステップ配信一時停止中
+    # scheduler.start()
+    # logger.info("ステップ配信スケジューラー起動")
 
 # ───────────────────────────────────────
 # エントリーポイント
